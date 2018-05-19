@@ -31,9 +31,6 @@ public class MembraneCascade {
     private final int cStatusInitError = 90;
     private final int cStatusNoDB = 99;
 
-    private int mConfCount;
-    private Configuration mConf = new Configuration(0);
-
     private File mDir;
 
     private Membrane mStage1;
@@ -48,16 +45,25 @@ public class MembraneCascade {
     private MembraneCascade() {
         sInit();
         if (mStatus == cStatusInitOK) {
-            System.out.println("Start");
             switch (GlobalData.gRunData.xRunType()) {
                 case RunData.RunTypeSingle:
+                    System.out.println("Start Single combination");
+                    System.out.println("Configuration " + GlobalData.gRunData.xConf() + " "
+                            + "S1: " + GlobalData.gRunData.xS1Surface() + " * " + GlobalData.gRunData.xS1Type() + ", " + GlobalData.gRunData.xS1Pressure() + " bar, "
+                            + "S2: " + GlobalData.gRunData.xS2Surface() + " * " + GlobalData.gRunData.xS2Type() + ", " + GlobalData.gRunData.xS2Pressure() + " bar, "
+                            + "S3: " + GlobalData.gRunData.xS3Surface() + " * " + GlobalData.gRunData.xS3Type() + ", " + GlobalData.gRunData.xS3Pressure() + " bar");
                     sRunSingle();
+                    System.out.println("End Single combination");
                     break;
                 case RunData.RunTypeData:
+                    System.out.println("Start Data collection");
                     sRunModel(false);
+                    System.out.println("End Data collection");
                     break;
                 default:
+                    System.out.println("Start Optimization");
                     sRunModel(true);
+                    System.out.println("End Optimization");
                     break;
             }
         }
@@ -99,6 +105,7 @@ public class MembraneCascade {
                     lOutput.xWrite("S1Type;S1Press;S1Surf;S1In Vol/Conc;;;;;;;S1Perm Vol/Conc;;;;;;;S1Ret Vol/Conc;;;;;;;S2Type;S2Press;S2Surf;S2In Vol/Conc;;;;;;;S2Perm Vol/Conc;;;;;;;S2Ret Vol/Conc;;;;;;;S3Type;S3Press;S3Surf;S3In Vol/Conc;;;;;;;S3Perm Vol/Conc;;;;;;;S3Ret Vol/Conc;;;;;;;");
                     lOutput.xNewLine();
                 }
+                System.out.println("Configuration " + lConf.xConfId());
                 for (lCountType1 = 0; lCountType1 < GlobalData.gMembTypes.size(); lCountType1++) {
                     for (lCountPressure1 = 0; lCountPressure1 < GlobalData.gPressures.size(); lCountPressure1++) {
                         for (lCountSurface1 = 1; lCountSurface1 <= GlobalData.gRunData.xMaxSurface(); lCountSurface1++) {
@@ -111,12 +118,12 @@ public class MembraneCascade {
                                                     mStage1.xInitMembrane(GlobalData.gMembTypes.get(lCountType1), GlobalData.gPressures.get(lCountPressure1).intValue(), lCountSurface1);
                                                     mStage2.xInitMembrane(GlobalData.gMembTypes.get(lCountType2), GlobalData.gPressures.get(lCountPressure2).intValue(), lCountSurface2);
                                                     mStage3.xInitMembrane(GlobalData.gMembTypes.get(lCountType3), GlobalData.gPressures.get(lCountPressure3).intValue(), lCountSurface3);
-                                                    lFeasible = sCalculateFlows();
+                                                    lFeasible = sCalculateFlows(lConf);
                                                     if (lFeasible) {
                                                         lNumberFeasible++;
-                                                        lExitL = sCreateExit("EL");
-                                                        lExitM = sCreateExit("EM");
-                                                        lExitH = sCreateExit("EH");
+                                                        lExitL = sCreateExit(lConf, "EL");
+                                                        lExitM = sCreateExit(lConf, "EM");
+                                                        lExitH = sCreateExit(lConf, "EH");
                                                         lObjectiveT = sCalculateObjective(lExitL, lExitM, lExitH);
                                                         if (!pOptimize) {
                                                             sPrintCombination(lOutput);
@@ -150,14 +157,14 @@ public class MembraneCascade {
         }
     }
 
-    Flow sCreateExit(String pStage) {
+    Flow sCreateExit(Configuration pConf, String pStage) {
         Flow lResult;
         Flow lComponent;
         String[] lFeed;
         int lCount;
 
         lResult = new Flow();
-        lFeed = mConf.xFeed(pStage);
+        lFeed = pConf.xFeed(pStage);
         for (lCount = 0; lCount < lFeed.length; lCount++) {
             switch (lFeed[lCount]) {
                 case "In":
@@ -228,18 +235,32 @@ public class MembraneCascade {
         Flow lExitL;
         Flow lExitM;
         Flow lExitH;
+        List<Configuration> lConfigurations;
+        int lCount;
+        Configuration lConf = null;
 
-        mStage1.xInitMembrane(GlobalData.gRunData.xS1Type(), GlobalData.gRunData.xS1Pressure(), GlobalData.gRunData.xS1Surface());
-        mStage2.xInitMembrane(GlobalData.gRunData.xS2Type(), GlobalData.gRunData.xS2Pressure(), GlobalData.gRunData.xS2Surface());
-        mStage3.xInitMembrane(GlobalData.gRunData.xS3Type(), GlobalData.gRunData.xS3Pressure(), GlobalData.gRunData.xS3Surface());
-        lFeasible = sCalculateFlows();
-        if (lFeasible) {
-            lExitL = sCreateExit("EL");
-            lExitM = sCreateExit("EM");
-            lExitH = sCreateExit("EH");
-            lObjective = sCalculateObjective(lExitL, lExitM, lExitH);
-            System.out.println("Objective function: " + String.valueOf(lObjective));
-            sPrintSolution(mStage1, mStage2, mStage3);
+        lConfigurations = GlobalData.gConfigurations;
+        for (lCount = 0; lCount < lConfigurations.size(); lCount++) {
+            lConf = lConfigurations.get(lCount);
+            if (lConf.xConfId() == GlobalData.gRunData.xConf()) {
+                break;
+            }
+        }
+        if (lCount < lConfigurations.size()) {
+            if (lConf.xActive()) {
+                mStage1.xInitMembrane(GlobalData.gRunData.xS1Type(), GlobalData.gRunData.xS1Pressure(), GlobalData.gRunData.xS1Surface());
+                mStage2.xInitMembrane(GlobalData.gRunData.xS2Type(), GlobalData.gRunData.xS2Pressure(), GlobalData.gRunData.xS2Surface());
+                mStage3.xInitMembrane(GlobalData.gRunData.xS3Type(), GlobalData.gRunData.xS3Pressure(), GlobalData.gRunData.xS3Surface());
+                lFeasible = sCalculateFlows(lConf);
+                if (lFeasible) {
+                    lExitL = sCreateExit(lConf, "EL");
+                    lExitM = sCreateExit(lConf, "EM");
+                    lExitH = sCreateExit(lConf, "EH");
+                    lObjective = sCalculateObjective(lExitL, lExitM, lExitH);
+                    System.out.println("Objective function: " + String.valueOf(lObjective));
+                    sPrintSolution(mStage1, mStage2, mStage3);
+                }
+            }
         }
     }
 
@@ -259,7 +280,7 @@ public class MembraneCascade {
         sPrintFlow("Retentate", pStage3.xRetFlow());
     }
 
-    private boolean sCalculateFlows() {
+    private boolean sCalculateFlows(Configuration pConf) {
         boolean lRecycleOK;
         boolean lFeasible;
         boolean lFirst;
@@ -278,19 +299,19 @@ public class MembraneCascade {
         lFeasible = true;
         lFirst = true;
         do {
-            lFlowIn1 = sCreateInput("S1", lRecycle, lFirst);
+            lFlowIn1 = sCreateInput(pConf, "S1", lRecycle, lFirst);
             mStage1.xSetInFlow(lFlowIn1);
             mStage1.xCalculate();
             if (mStage1.xPermFlow().xVolume() == 0 || mStage1.xRetFlow().xVolume() == 0) {
                 lFeasible = false;
             } else {
-                lFlowIn2 = sCreateInput("S2", lRecycle, lFirst);
+                lFlowIn2 = sCreateInput(pConf, "S2", lRecycle, lFirst);
                 mStage2.xSetInFlow(lFlowIn2);
                 mStage2.xCalculate();
                 if (mStage2.xPermFlow().xVolume() == 0 || mStage2.xRetFlow().xVolume() == 0) {
                     lFeasible = false;
                 } else {
-                    lFlowIn3 = sCreateInput("S3", lRecycle, lFirst);
+                    lFlowIn3 = sCreateInput(pConf, "S3", lRecycle, lFirst);
                     mStage3.xSetInFlow(lFlowIn3);
                     mStage3.xCalculate();
                     if (mStage3.xPermFlow().xVolume() == 0 || mStage3.xRetFlow().xVolume() == 0) {
@@ -342,7 +363,7 @@ public class MembraneCascade {
         return lFeasible;
     }
 
-    Flow sCreateInput(String pStage, List<RecycleItem> pRecycle, boolean pFirst) {
+    Flow sCreateInput(Configuration pConf, String pStage, List<RecycleItem> pRecycle, boolean pFirst) {
         Flow lResult;
         Flow lComponent;
         String[] lFeed;
@@ -350,7 +371,7 @@ public class MembraneCascade {
         int lLevelStage;
 
         lResult = new Flow();
-        lFeed = mConf.xFeed(pStage);
+        lFeed = pConf.xFeed(pStage);
         if (pStage.length() < 2) {
             lLevelStage = 99;
         } else {

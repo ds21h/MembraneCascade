@@ -18,4 +18,12 @@ class ConfigurationEntry {
         mInput = pInput;
         mSource = pSource;
     }
+    
+    String xInput(){
+        return mInput;
+    }
+    
+    String xSource(){
+        return mSource;
+    }
 }

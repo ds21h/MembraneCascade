@@ -13,21 +13,22 @@ import java.util.List;
  * @author Afke
  */
 class Configuration {
+
     private int mConfId;
     private boolean mActive;
     private List<ConfigurationEntry> mEntries;
-    
-    Configuration(int pConfId){
+
+    Configuration(int pConfId) {
         mConfId = pConfId;
         mActive = false;
         mEntries = new ArrayList<>();
     }
-    
-    void xAddEntry(String pInput, String pSource){
+
+    void xAddEntry(String pInput, String pSource) {
         ConfigurationEntry lEntry;
-        
-        if (pInput.equals("Active")){
-            if (pSource.equals("True")){
+
+        if (pInput.equals("Active")) {
+            if (pSource.equals("True")) {
                 mActive = true;
             } else {
                 mActive = false;
@@ -37,20 +38,31 @@ class Configuration {
             mEntries.add(lEntry);
         }
     }
-    
-    boolean xActive(){
+
+    boolean xActive() {
         return mActive;
     }
-    
-    int xConfId(){
+
+    int xConfId() {
         return mConfId;
     }
-    
-    String[] xFeed(String pInput){
-        List <String> lFeed;
-        
+
+    String[] xFeed(String pInput) {
+        List<String> lFeed;
+        ConfigurationEntry lEntry;
+        int lCount;
+
         lFeed = new ArrayList<>();
-        switch(pInput){
+        if (mActive) {
+            for (lCount = 0; lCount < mEntries.size(); lCount++) {
+                lEntry = mEntries.get(lCount);
+                if (lEntry.xInput().equals(pInput)) {
+                    lFeed.add(lEntry.xSource());
+                }
+            }
+        }
+
+        /*        switch(pInput){
             case "S1":
                 lFeed.add("In");
                 lFeed.add("R2");
@@ -70,7 +82,7 @@ class Configuration {
             case "EL":
                 lFeed.add("P2");
                 break;
-        }
+        } */
         return lFeed.toArray(new String[lFeed.size()]);
     }
 }
