@@ -48,7 +48,7 @@ public class MembraneCascade {
             switch (GlobalData.gRunData.xRunType()) {
                 case RunData.RunTypeSingle:
                     System.out.println("Start Single combination");
-                    System.out.println("Configuration " + GlobalData.gRunData.xConf() + " "
+                    System.out.println("Configuration " + GlobalData.gRunData.xConf() + ", "
                             + "S1: " + GlobalData.gRunData.xS1Surface() + " * " + GlobalData.gRunData.xS1Type() + ", " + GlobalData.gRunData.xS1Pressure() + " bar, "
                             + "S2: " + GlobalData.gRunData.xS2Surface() + " * " + GlobalData.gRunData.xS2Type() + ", " + GlobalData.gRunData.xS2Pressure() + " bar, "
                             + "S3: " + GlobalData.gRunData.xS3Surface() + " * " + GlobalData.gRunData.xS3Type() + ", " + GlobalData.gRunData.xS3Pressure() + " bar");
@@ -186,7 +186,7 @@ public class MembraneCascade {
                     lComponent = mStage3.xPermFlow();
                     break;
                 case "R3":
-                    lComponent = mStage1.xRetFlow();
+                    lComponent = mStage3.xRetFlow();
                     break;
                 default:
                     lComponent = new Flow();
@@ -402,7 +402,7 @@ public class MembraneCascade {
                     lComponent = sSetComponent(pStage, lLevelStage, lFeed[lCount], 3, pFirst, pRecycle, mStage3.xPermFlow());
                     break;
                 case "R3":
-                    lComponent = sSetComponent(pStage, lLevelStage, lFeed[lCount], 3, pFirst, pRecycle, mStage1.xRetFlow());
+                    lComponent = sSetComponent(pStage, lLevelStage, lFeed[lCount], 3, pFirst, pRecycle, mStage3.xRetFlow());
                     break;
                 default:
                     lComponent = new Flow();
