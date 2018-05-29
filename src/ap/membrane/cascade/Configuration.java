@@ -61,28 +61,6 @@ class Configuration {
                 }
             }
         }
-
-        /*        switch(pInput){
-            case "S1":
-                lFeed.add("In");
-                lFeed.add("R2");
-                lFeed.add("P3");
-                break;
-            case "S2":
-                lFeed.add("P1");
-                break;
-            case "S3":
-                lFeed.add("R1");
-                break;
-            case "EH":
-                lFeed.add("R3");
-                break;
-            case "EM":
-                break;
-            case "EL":
-                lFeed.add("P2");
-                break;
-        } */
         return lFeed.toArray(new String[lFeed.size()]);
     }
 }

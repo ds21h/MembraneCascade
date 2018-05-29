@@ -127,7 +127,6 @@ class Membrane {
 
     void xCalculate() {
         double[] lPermConcentration;
-        double lTempIn;
         int lTeller;
 
         if (mStatus == cStatusReadyToCalculate) {
@@ -137,12 +136,7 @@ class Membrane {
             } else {
                 lPermConcentration = new double[GlobalData.gComponents.size()];
                 for (lTeller = 0; lTeller < lPermConcentration.length; lTeller++) {
-                    if (GlobalData.gRunData.xComp()) {
-                        lTempIn = GlobalData.gComponents.get(lTeller).xConcentration();
-                    } else {
-                        lTempIn = mInFlow.xConcentration()[lTeller];
-                    }
-                    lPermConcentration[lTeller] = lTempIn * mMembraneData.xMassFraction()[lTeller];
+                    lPermConcentration[lTeller] = mInFlow.xConcentration()[lTeller] * mMembraneData.xMassFraction()[lTeller];
                 }
                 mPermeateFlow.xMakeFlow(mMembraneData.xPermeateFlow() * mSurface, lPermConcentration);
                 mRetentateFlow.xMakeFlow(mInFlow);

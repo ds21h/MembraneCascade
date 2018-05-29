@@ -75,13 +75,11 @@ class Flow {
         int lTeller;
 
         lVolume = mVolume + pFlow.xVolume();
-        if (!GlobalData.gRunData.xComp()) {
-            lConc = new double[GlobalData.gComponents.size()];
-            for (lTeller = 0; lTeller < lConc.length; lTeller++) {
-                lConc[lTeller] = ((mVolume * mConcentration[lTeller]) + (pFlow.xVolume() * pFlow.xConcentration()[lTeller])) / lVolume;
-            }
-            mConcentration = lConc;
+        lConc = new double[GlobalData.gComponents.size()];
+        for (lTeller = 0; lTeller < lConc.length; lTeller++) {
+            lConc[lTeller] = ((mVolume * mConcentration[lTeller]) + (pFlow.xVolume() * pFlow.xConcentration()[lTeller])) / lVolume;
         }
+        mConcentration = lConc;
         mVolume = lVolume;
     }
 
@@ -100,13 +98,11 @@ class Flow {
         } else {
             lVerschil = abs(mVolume - pFlow.xVolume());
             lResult = (int) ((lVerschil / mVolume) * 1000);
-            if (!GlobalData.gRunData.xComp()) {
-                for (lTeller = 0; lTeller < mConcentration.length; lTeller++) {
-                    lVerschil = abs(mConcentration[lTeller] - pFlow.xConcentration()[lTeller]);
-                    lResultT = (int) ((lVerschil / mConcentration[lTeller]) * 1000);
-                    if (lResultT > lResult) {
-                        lResult = lResultT;
-                    }
+            for (lTeller = 0; lTeller < mConcentration.length; lTeller++) {
+                lVerschil = abs(mConcentration[lTeller] - pFlow.xConcentration()[lTeller]);
+                lResultT = (int) ((lVerschil / mConcentration[lTeller]) * 1000);
+                if (lResultT > lResult) {
+                    lResult = lResultT;
                 }
             }
         }

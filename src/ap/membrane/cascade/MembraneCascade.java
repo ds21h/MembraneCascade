@@ -6,9 +6,8 @@
 package ap.membrane.cascade;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +31,7 @@ public class MembraneCascade {
     private final int cStatusNoDB = 99;
 
     private File mDir;
+    private OutFile mRunReport;
 
     private Membrane mStage1;
     private Membrane mStage2;
@@ -39,6 +39,7 @@ public class MembraneCascade {
     private Membrane mStage1Max;
     private Membrane mStage2Max;
     private Membrane mStage3Max;
+    private Configuration mMaxConf;
     private Flow mFlowIn;
     private Flow mFlowRecycleInit;
 
@@ -48,6 +49,7 @@ public class MembraneCascade {
             switch (GlobalData.gRunData.xRunType()) {
                 case RunData.RunTypeSingle:
                     System.out.println("Start Single combination");
+                    mRunReport.xWriteln("Single combination");
                     System.out.println("Configuration " + GlobalData.gRunData.xConf() + ", "
                             + "S1: " + GlobalData.gRunData.xS1Surface() + " * " + GlobalData.gRunData.xS1Type() + ", " + GlobalData.gRunData.xS1Pressure() + " bar, "
                             + "S2: " + GlobalData.gRunData.xS2Surface() + " * " + GlobalData.gRunData.xS2Type() + ", " + GlobalData.gRunData.xS2Pressure() + " bar, "
@@ -57,11 +59,13 @@ public class MembraneCascade {
                     break;
                 case RunData.RunTypeData:
                     System.out.println("Start Data collection");
+                    mRunReport.xWriteln("Data collection");
                     sRunModel(false);
                     System.out.println("End Data collection");
                     break;
                 default:
                     System.out.println("Start Optimization");
+                    mRunReport.xWriteln("Optimization");
                     sRunModel(true);
                     System.out.println("End Optimization");
                     break;
@@ -92,6 +96,8 @@ public class MembraneCascade {
         OutFile lOutput = null;
         List<Configuration> lConfigurations;
         Configuration lConf;
+        int lCount;
+        int lCountInt;
 
         lNumberFeasible = 0;
         lNumberInfeasible = 0;
@@ -106,6 +112,8 @@ public class MembraneCascade {
                     lOutput.xNewLine();
                 }
                 System.out.println("Configuration " + lConf.xConfId());
+                lCount = 0;
+                lCountInt = 0;
                 for (lCountType1 = 0; lCountType1 < GlobalData.gMembTypes.size(); lCountType1++) {
                     for (lCountPressure1 = 0; lCountPressure1 < GlobalData.gPressures.size(); lCountPressure1++) {
                         for (lCountSurface1 = 1; lCountSurface1 <= GlobalData.gRunData.xMaxSurface(); lCountSurface1++) {
@@ -133,10 +141,18 @@ public class MembraneCascade {
                                                             mStage1Max.xCopyFrom(mStage1);
                                                             mStage2Max.xCopyFrom(mStage2);
                                                             mStage3Max.xCopyFrom(mStage3);
+                                                            mMaxConf = lConf;
                                                         }
                                                     } else {
                                                         lNumberInfeasible++;
                                                     }
+                                                    if (lCountInt < 250000){
+                                                        lCountInt++;
+                                                    } else {
+                                                        System.out.println("Combinations processed: " + lCount);
+                                                        lCountInt = 1;
+                                                    }
+                                                    lCount++;
                                                 }
                                             }
                                         }
@@ -146,14 +162,15 @@ public class MembraneCascade {
                         }
                     }
                 }
-                if (pOptimize) {
-                    System.out.println("Feasible: " + lNumberFeasible + ", Infeasible: " + lNumberInfeasible);
-                    System.out.println("Max. Objective function: " + String.valueOf(lObjective));
-                    sPrintSolution(mStage1Max, mStage2Max, mStage3Max);
-                } else {
+                if (!pOptimize) {
                     lOutput.xClose();
                 }
             }
+        }
+        if (pOptimize) {
+            mRunReport.xWriteln("Feasible: " + lNumberFeasible + ", Infeasible: " + lNumberInfeasible);
+            mRunReport.xWriteln("Max. Objective function: " + String.valueOf(lObjective));
+            sPrintSolution(mMaxConf, mStage1Max, mStage2Max, mStage3Max);
         }
     }
 
@@ -257,24 +274,24 @@ public class MembraneCascade {
                     lExitM = sCreateExit(lConf, "EM");
                     lExitH = sCreateExit(lConf, "EH");
                     lObjective = sCalculateObjective(lExitL, lExitM, lExitH);
-                    System.out.println("Objective function: " + String.valueOf(lObjective));
-                    sPrintSolution(mStage1, mStage2, mStage3);
+                    mRunReport.xWriteln("Objective function: " + String.valueOf(lObjective));
+                    sPrintSolution(lConf, mStage1, mStage2, mStage3);
                 }
             }
         }
     }
 
-    private void sPrintSolution(Membrane pStage1, Membrane pStage2, Membrane pStage3) {
-        System.out.println("S1: " + pStage1.xSurface() + " * " + pStage1.xType() + ", " + pStage1.xPressure() + " bar, " + "S2: " + pStage2.xSurface() + " * " + pStage2.xType() + ", " + pStage2.xPressure() + " bar, " + "S3: " + pStage3.xSurface() + " * " + pStage3.xType() + ", " + pStage3.xPressure() + " bar");
-        System.out.println("Stage 1:");
+    private void sPrintSolution(Configuration pConf, Membrane pStage1, Membrane pStage2, Membrane pStage3) {
+        mRunReport.xWriteln("Conf: " + pConf.xConfId() + " S1: " + pStage1.xSurface() + " * " + pStage1.xType() + ", " + pStage1.xPressure() + " bar, " + "S2: " + pStage2.xSurface() + " * " + pStage2.xType() + ", " + pStage2.xPressure() + " bar, " + "S3: " + pStage3.xSurface() + " * " + pStage3.xType() + ", " + pStage3.xPressure() + " bar");
+        mRunReport.xWriteln("Stage 1:");
         sPrintFlow("Input", pStage1.xInFlow());
         sPrintFlow("Permeate", pStage1.xPermFlow());
         sPrintFlow("Retentate", pStage1.xRetFlow());
-        System.out.println("Stage 2:");
+        mRunReport.xWriteln("Stage 2:");
         sPrintFlow("Input", pStage2.xInFlow());
         sPrintFlow("Permeate", pStage2.xPermFlow());
         sPrintFlow("Retentate", pStage2.xRetFlow());
-        System.out.println("Stage 3:");
+        mRunReport.xWriteln("Stage 3:");
         sPrintFlow("Input", pStage3.xInFlow());
         sPrintFlow("Permeate", pStage3.xPermFlow());
         sPrintFlow("Retentate", pStage3.xRetFlow());
@@ -291,8 +308,8 @@ public class MembraneCascade {
         List<RecycleItem> lRecycle;
         RecycleItem lItem;
         int lCount;
-        int lAfw;
-        int lAfwMax;
+        int lDev;
+        int lDevMax;
 
         lRecycle = new ArrayList<>();
         lRecycleOK = false;
@@ -317,7 +334,7 @@ public class MembraneCascade {
                     if (mStage3.xPermFlow().xVolume() == 0 || mStage3.xRetFlow().xVolume() == 0) {
                         lFeasible = false;
                     } else {
-                        lAfwMax = 0;
+                        lDevMax = 0;
                         for (lCount = 0; lCount < lRecycle.size(); lCount++) {
                             lItem = lRecycle.get(lCount);
                             switch (lItem.xSource()) {
@@ -342,12 +359,12 @@ public class MembraneCascade {
                                 default:
                                     lFlowTest = new Flow();
                             }
-                            lAfw = lFlowTest.xCompare(lItem.xFlow());
-                            if (lAfw > lAfwMax) {
-                                lAfwMax = lAfw;
+                            lDev = lFlowTest.xCompare(lItem.xFlow());
+                            if (lDev > lDevMax) {
+                                lDevMax = lDev;
                             }
                         }
-                        if (lAfwMax > 10) {
+                        if (lDevMax > 10) {
                             lRecycleOK = false;
                         } else {
                             lRecycleOK = true;
@@ -444,7 +461,7 @@ public class MembraneCascade {
     }
 
     void sPrintFlow(String pDescr, Flow pFlow) {
-        System.out.println(pDescr + ": Volume: " + pFlow.xVolume() + " Concentration: " + pFlow.xConcentration()[0] + " / " + pFlow.xConcentration()[1] + " / " + pFlow.xConcentration()[2] + " / " + pFlow.xConcentration()[3] + " / " + pFlow.xConcentration()[4] + " / " + pFlow.xConcentration()[5]);
+        mRunReport.xWriteln(pDescr + ": Volume: " + pFlow.xVolume() + " Concentration: " + pFlow.xConcentration()[0] + " / " + pFlow.xConcentration()[1] + " / " + pFlow.xConcentration()[2] + " / " + pFlow.xConcentration()[3] + " / " + pFlow.xConcentration()[4] + " / " + pFlow.xConcentration()[5]);
     }
 
     double sCalculateObjective(Flow pExitL, Flow pExitM, Flow pExitH) {
@@ -464,11 +481,12 @@ public class MembraneCascade {
 
     private void sInit() {
         DataBase lDatabase;
+        LocalDateTime lDate;
 
         sSetOutputDir();
-//        GlobalData.gOutput = new OutFile();
-//        GlobalData.gOutput.xWrite("S1Type;S1Press;S1Surf;S1In Vol/Conc;;;;;;;S1Perm Vol/Conc;;;;;;;S1Ret Vol/Conc;;;;;;;S2Type;S2Press;S2Surf;S2In Vol/Conc;;;;;;;S2Perm Vol/Conc;;;;;;;S2Ret Vol/Conc;;;;;;;S3Type;S3Press;S3Surf;S3In Vol/Conc;;;;;;;S3Perm Vol/Conc;;;;;;;S3Ret Vol/Conc;;;;;;;");
-//        GlobalData.gOutput.xNewLine();
+        mRunReport = new OutFile(mDir, "Runreport");
+        lDate = LocalDateTime.now();
+        mRunReport.xWriteln("Start run " + lDate.format(DateTimeFormatter.ISO_DATE_TIME));
         lDatabase = new DataBase();
         if (lDatabase.xStatus() == DataBase.cOK) {
             GlobalData.gConfigurations = lDatabase.xConfigurations();
@@ -499,30 +517,11 @@ public class MembraneCascade {
     }
 
     private void sCloseDown() {
-//        GlobalData.gOutput.xClose();
-    }
+        LocalDateTime lDate;
 
-    private void sSetSysout() {
-        File lFile = null;
-        int lCount;
-        LocalDate lDate;
-        String lFileName;
-        boolean lExists;
-
-        lCount = 0;
-        lDate = LocalDate.now();
-        lExists = true;
-        while (lExists) {
-            lFileName = "MembraneCascade_" + lDate.format(DateTimeFormatter.ISO_DATE) + "_" + String.format("%03d", lCount) + ".txt";
-            lFile = new File(lFileName);
-            lExists = lFile.exists();
-            lCount++;
-        }
-        try {
-            System.setOut(new PrintStream(lFile));
-        } catch (FileNotFoundException ex) {
-            System.out.println("Exception on sysout file: " + ex.getMessage());
-        }
+        lDate = LocalDateTime.now();
+        mRunReport.xWriteln("End run " + lDate.format(DateTimeFormatter.ISO_DATE_TIME));
+        mRunReport.xClose();
     }
 
     private void sSetOutputDir() {

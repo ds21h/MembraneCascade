@@ -17,7 +17,6 @@ class RunData {
     private double mInFlow;
     private double mMinRetFlow;
     private int mMaxSurface;
-    private boolean mComp;
     private int mRunType;
     private String mLocale;
     private int mConf;
@@ -31,11 +30,10 @@ class RunData {
     private int mS2Surface;
     private int mS3Surface;
     
-    RunData(double pInFlow, double pMinRetFlow, int pMaxSurface, boolean pComp, int pRunType, String pLocale, int pConf, String pS1Type, int pS1Pressure, int pS1Surface, String pS2Type, int pS2Pressure, int pS2Surface, String pS3Type, int pS3Pressure, int pS3Surface){
+    RunData(double pInFlow, double pMinRetFlow, int pMaxSurface, int pRunType, String pLocale, int pConf, String pS1Type, int pS1Pressure, int pS1Surface, String pS2Type, int pS2Pressure, int pS2Surface, String pS3Type, int pS3Pressure, int pS3Surface){
         mInFlow = pInFlow;
         mMinRetFlow = pMinRetFlow;
         mMaxSurface = pMaxSurface;
-        mComp = pComp;
         mRunType = pRunType;
         mLocale = pLocale;
         mConf = pConf;
@@ -60,10 +58,6 @@ class RunData {
     
     int xMaxSurface(){
         return mMaxSurface;
-    }
-    
-    boolean xComp(){
-        return mComp;
     }
     
     int xRunType(){
