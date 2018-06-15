@@ -146,7 +146,7 @@ public class MembraneCascade {
                                                     } else {
                                                         lNumberInfeasible++;
                                                     }
-                                                    if (lCountInt < 250000){
+                                                    if (lCountInt < 250000) {
                                                         lCountInt++;
                                                     } else {
                                                         System.out.println("Combinations processed: " + lCount);
@@ -465,18 +465,48 @@ public class MembraneCascade {
     }
 
     double sCalculateObjective(Flow pExitL, Flow pExitM, Flow pExitH) {
-        double lResultL;
-        double lResultH;
-        double lTotalL;
-        double lTotalH;
+        List<Component> lComponents;
+        int lCount;
+        boolean lYieldOK;
+        double lYield;
+        double lConcTotalH;
+        double lConcTotalL;
+        double lResult;
 
-        lTotalL = pExitL.xConcentration()[0] + pExitL.xConcentration()[1] + pExitL.xConcentration()[2] + pExitL.xConcentration()[3] + pExitL.xConcentration()[4] + pExitL.xConcentration()[5];
-        lTotalH = pExitH.xConcentration()[0] + pExitH.xConcentration()[1] + pExitH.xConcentration()[2] + pExitH.xConcentration()[3] + pExitH.xConcentration()[4] + pExitH.xConcentration()[5];
-//        lResultL = pExitL.xVolume() * pExitL.xConcentration()[0] + pExitL.xVolume() * pExitL.xConcentration()[1] + pExitL.xVolume() * pExitL.xConcentration()[2];
-//        lResultH = pExitH.xVolume() * pExitH.xConcentration()[3] + pExitH.xVolume() * pExitH.xConcentration()[4] + pExitH.xVolume() * pExitH.xConcentration()[5];
-        lResultL = pExitL.xConcentration()[0] / lTotalL + pExitL.xConcentration()[1] / lTotalL + pExitL.xConcentration()[2] / lTotalL;
-        lResultH = pExitH.xConcentration()[3] / lTotalH + pExitH.xConcentration()[4] / lTotalH + pExitH.xConcentration()[5] / lTotalH;
-        return lResultL + lResultH;
+        lResult = 0.0d;
+        lComponents = GlobalData.gComponents;
+        lYieldOK = true;
+        for (lCount = 0; lCount < 3; lCount++) {
+            lYield = pExitL.xConcentration()[lCount] / lComponents.get(lCount).xConcentration();
+            if (lYield < 0.9d) {
+                lYieldOK = false;
+                break;
+            }
+        }
+        if (lYieldOK) {
+            for (lCount = 3; lCount < lComponents.size(); lCount++) {
+                lYield = pExitH.xConcentration()[lCount] / lComponents.get(lCount).xConcentration();
+                if (lYield < 0.9d) {
+                    lYieldOK = false;
+                    break;
+                }
+            }
+            if (lYieldOK) {
+                lConcTotalH = 0.0d;
+                lConcTotalL = 0.0d;
+                for (lCount = 0; lCount < pExitH.xConcentration().length; lCount++) {
+                    lConcTotalH += pExitH.xConcentration()[lCount];
+                    lConcTotalL += pExitL.xConcentration()[lCount];
+                }
+                for (lCount = 0; lCount < 3; lCount++) {
+                    lResult += pExitL.xConcentration()[lCount]/lConcTotalL;
+                }
+                for (lCount = 3; lCount < pExitH.xConcentration().length; lCount++) {
+                    lResult += pExitH.xConcentration()[lCount]/lConcTotalH;
+                }
+            }
+        }
+        return lResult;
     }
 
     private void sInit() {
