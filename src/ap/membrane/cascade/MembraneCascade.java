@@ -6,6 +6,7 @@
 package ap.membrane.cascade;
 
 import java.io.File;
+import static java.lang.Math.abs;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -298,23 +299,21 @@ public class MembraneCascade {
     }
 
     private boolean sCalculateFlows(Configuration pConf) {
+        int lCountIteration;
         boolean lRecycleOK;
         boolean lFeasible;
         boolean lFirst;
         Flow lFlowIn1;
         Flow lFlowIn2;
         Flow lFlowIn3;
-        Flow lFlowTest;
         List<RecycleItem> lRecycle;
-        RecycleItem lItem;
-        int lCount;
-        int lDev;
-        int lDevMax;
+        int lDeviation;
 
         lRecycle = new ArrayList<>();
         lRecycleOK = false;
         lFeasible = true;
         lFirst = true;
+        lCountIteration = 0;
         do {
             lFlowIn1 = sCreateInput(pConf, "S1", lRecycle, lFirst);
             mStage1.xSetInFlow(lFlowIn1);
@@ -334,38 +333,14 @@ public class MembraneCascade {
                     if (mStage3.xPermFlow().xVolume() == 0 || mStage3.xRetFlow().xVolume() == 0) {
                         lFeasible = false;
                     } else {
-                        lDevMax = 0;
-                        for (lCount = 0; lCount < lRecycle.size(); lCount++) {
-                            lItem = lRecycle.get(lCount);
-                            switch (lItem.xSource()) {
-                                case "P1":
-                                    lFlowTest = mStage1.xPermFlow();
-                                    break;
-                                case "R1":
-                                    lFlowTest = mStage1.xRetFlow();
-                                    break;
-                                case "P2":
-                                    lFlowTest = mStage2.xPermFlow();
-                                    break;
-                                case "R2":
-                                    lFlowTest = mStage2.xRetFlow();
-                                    break;
-                                case "P3":
-                                    lFlowTest = mStage3.xPermFlow();
-                                    break;
-                                case "R3":
-                                    lFlowTest = mStage3.xRetFlow();
-                                    break;
-                                default:
-                                    lFlowTest = new Flow();
-                            }
-                            lDev = lFlowTest.xCompare(lItem.xFlow());
-                            if (lDev > lDevMax) {
-                                lDevMax = lDev;
-                            }
-                        }
-                        if (lDevMax > 10) {
+                        lDeviation = sRecycleDeviation(lRecycle);
+                        if (lDeviation > 10) {
                             lRecycleOK = false;
+                            if (lCountIteration > 2) {
+                                if (!sVolumeClosed(pConf)) {
+                                    lFeasible = false;
+                                }
+                            }
                         } else {
                             lRecycleOK = true;
                         }
@@ -376,8 +351,69 @@ public class MembraneCascade {
                 lRecycleOK = true;
             }
             lFirst = false;
+            lCountIteration++;
         } while (!lRecycleOK);
         return lFeasible;
+    }
+
+    int sRecycleDeviation(List<RecycleItem> pRecycle) {
+        int lDevMax;
+        int lDev;
+        RecycleItem lItem;
+        Flow lFlowTest;
+        int lCount;
+
+        lDevMax = 0;
+        for (lCount = 0; lCount < pRecycle.size(); lCount++) {
+            lItem = pRecycle.get(lCount);
+            switch (lItem.xSource()) {
+                case "P1":
+                    lFlowTest = mStage1.xPermFlow();
+                    break;
+                case "R1":
+                    lFlowTest = mStage1.xRetFlow();
+                    break;
+                case "P2":
+                    lFlowTest = mStage2.xPermFlow();
+                    break;
+                case "R2":
+                    lFlowTest = mStage2.xRetFlow();
+                    break;
+                case "P3":
+                    lFlowTest = mStage3.xPermFlow();
+                    break;
+                case "R3":
+                    lFlowTest = mStage3.xRetFlow();
+                    break;
+                default:
+                    lFlowTest = new Flow();
+            }
+            lDev = lFlowTest.xCompare(lItem.xFlow());
+            if (lDev > lDevMax) {
+                lDevMax = lDev;
+            }
+        }
+        return lDevMax;
+    }
+
+    boolean sVolumeClosed(Configuration pConf) {
+        Flow lExitL;
+        Flow lExitM;
+        Flow lExitH;
+        double lVolOut;
+        double lVolDiff;
+
+        lExitL = sCreateExit(pConf, "EL");
+        lExitM = sCreateExit(pConf, "EM");
+        lExitH = sCreateExit(pConf, "EH");
+
+        lVolOut = lExitL.xVolume() + lExitM.xVolume() + lExitH.xVolume();
+        lVolDiff = abs(mFlowIn.xVolume() - lVolOut);
+        if (lVolDiff / mFlowIn.xVolume() > 0.0001d) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     Flow sCreateInput(Configuration pConf, String pStage, List<RecycleItem> pRecycle, boolean pFirst) {
@@ -499,10 +535,10 @@ public class MembraneCascade {
                     lConcTotalL += pExitL.xConcentration()[lCount];
                 }
                 for (lCount = 0; lCount < 3; lCount++) {
-                    lResult += pExitL.xConcentration()[lCount]/lConcTotalL;
+                    lResult += pExitL.xConcentration()[lCount] / lConcTotalL;
                 }
                 for (lCount = 3; lCount < pExitH.xConcentration().length; lCount++) {
-                    lResult += pExitH.xConcentration()[lCount]/lConcTotalH;
+                    lResult += pExitH.xConcentration()[lCount] / lConcTotalH;
                 }
             }
         }
