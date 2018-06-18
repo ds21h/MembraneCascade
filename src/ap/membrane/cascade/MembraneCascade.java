@@ -501,33 +501,111 @@ public class MembraneCascade {
     }
 
     double sCalculateObjective(Flow pExitL, Flow pExitM, Flow pExitH) {
+        double lResult;
+        
+        switch (GlobalData.cObjectiveType){
+            case GlobalData.ObjectiveYield:
+                if (pExitM.xVolume() == 0.0d){
+                    lResult = sObjectiveYield2(pExitL, pExitH);
+                } else {
+                    lResult = sObjectiveYield3(pExitL, pExitM, pExitH);
+                }
+                break;
+            case GlobalData.ObjectivePurity:
+                if (pExitM.xVolume() == 0.0d){
+                    lResult = sObjectivePurity2(pExitL, pExitH);
+                } else {
+                    lResult = sObjectivePurity3(pExitL, pExitM, pExitH);
+                }
+                break;
+            case GlobalData.ObjectiveMix:
+                if (pExitM.xVolume() == 0.0d){
+                    lResult = sObjectiveMix2(pExitL, pExitH);
+                } else {
+                    lResult = sObjectiveMix3(pExitL, pExitM, pExitH);
+                }
+                break;
+            default:
+                lResult = 0.0d;
+        }
+        return lResult;
+    }
+    
+    double sObjectiveYield2(Flow pExitL, Flow pExitH) {
+        double lResultL;
+        double lResultH;
+
+        lResultL = ((pExitL.xVolume() * pExitL.xConcentration()[0])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[0])) + ((pExitL.xVolume() * pExitL.xConcentration()[1])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[1])) + ((pExitL.xVolume() * pExitL.xConcentration()[2])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[2]));
+        lResultH = ((pExitH.xVolume() * pExitH.xConcentration()[3])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[3])) + ((pExitH.xVolume() * pExitH.xConcentration()[4])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[4])) + ((pExitH.xVolume() * pExitH.xConcentration()[5])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[5]));
+        return lResultL + lResultH;
+    }
+    
+    double sObjectiveYield3(Flow pExitL, Flow pExitM, Flow pExitH) {
+        double lResultL;
+        double lResultM;
+        double lResultH;
+
+        lResultL = ((pExitL.xVolume() * pExitL.xConcentration()[0])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[0])) + ((pExitL.xVolume() * pExitL.xConcentration()[1])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[1]));
+        lResultM = ((pExitM.xVolume() * pExitM.xConcentration()[2])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[2])) + ((pExitM.xVolume() * pExitM.xConcentration()[3])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[3]));
+        lResultH = ((pExitH.xVolume() * pExitH.xConcentration()[4])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[4])) + ((pExitH.xVolume() * pExitH.xConcentration()[5])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[5]));
+        return lResultL + lResultM + lResultH;
+    }
+    
+    double sObjectivePurity2(Flow pExitL, Flow pExitH) {
+        double lResultL;
+        double lResultH;
+        double lTotalL;
+        double lTotalH;
+
+        lTotalL = pExitL.xConcentration()[0] + pExitL.xConcentration()[1] + pExitL.xConcentration()[2] + pExitL.xConcentration()[3] + pExitL.xConcentration()[4] + pExitL.xConcentration()[5];
+        lTotalH = pExitH.xConcentration()[0] + pExitH.xConcentration()[1] + pExitH.xConcentration()[2] + pExitH.xConcentration()[3] + pExitH.xConcentration()[4] + pExitH.xConcentration()[5];
+        lResultL = (pExitL.xConcentration()[0] + pExitL.xConcentration()[1] + pExitL.xConcentration()[2]) / lTotalL;
+        lResultH = (pExitH.xConcentration()[3] + pExitH.xConcentration()[4] + pExitH.xConcentration()[5]) / lTotalH;
+        return lResultL + lResultH;
+    }
+    
+    double sObjectivePurity3(Flow pExitL, Flow pExitM, Flow pExitH) {
+        double lResultL;
+        double lResultM;
+        double lResultH;
+        double lTotalL;
+        double lTotalM;
+        double lTotalH;
+
+        lTotalL = pExitL.xConcentration()[0] + pExitL.xConcentration()[1] + pExitL.xConcentration()[2] + pExitL.xConcentration()[3] + pExitL.xConcentration()[4] + pExitL.xConcentration()[5];
+        lTotalM = pExitM.xConcentration()[0] + pExitM.xConcentration()[1] + pExitM.xConcentration()[2] + pExitM.xConcentration()[3] + pExitM.xConcentration()[4] + pExitM.xConcentration()[5];
+        lTotalH = pExitH.xConcentration()[0] + pExitH.xConcentration()[1] + pExitH.xConcentration()[2] + pExitH.xConcentration()[3] + pExitH.xConcentration()[4] + pExitH.xConcentration()[5];
+        lResultL = (pExitL.xConcentration()[0] + pExitL.xConcentration()[1]) / lTotalL;
+        lResultM = (pExitM.xConcentration()[2] + pExitM.xConcentration()[3]) / lTotalM;
+        lResultH = (pExitH.xConcentration()[4] + pExitH.xConcentration()[5]) / lTotalH;
+        return lResultL + lResultM + lResultH;
+    }
+
+    double sObjectiveMix2(Flow pExitL, Flow pExitH) {
         List<Component> lComponents;
         int lCount;
-        boolean lYieldOK;
-        double lYield;
+        double lMassIn;
+        double lMassOut;
         double lConcTotalH;
         double lConcTotalL;
         double lResult;
 
         lResult = 0.0d;
         lComponents = GlobalData.gComponents;
-        lYieldOK = true;
+        lMassIn = 0;
+        lMassOut = 0;
         for (lCount = 0; lCount < 3; lCount++) {
-            lYield = pExitL.xConcentration()[lCount] / lComponents.get(lCount).xConcentration();
-            if (lYield < 0.9d) {
-                lYieldOK = false;
-                break;
-            }
+            lMassIn += lComponents.get(lCount).xConcentrationMass() * mFlowIn.xVolume();
+            lMassOut += pExitL.xConcentration()[lCount] * lComponents.get(lCount).xMolWeight() * pExitL.xVolume();
         }
-        if (lYieldOK) {
+        if (lMassOut / lMassIn > GlobalData.cMinYield) {
+            lMassIn = 0;
+            lMassOut = 0;
             for (lCount = 3; lCount < lComponents.size(); lCount++) {
-                lYield = pExitH.xConcentration()[lCount] / lComponents.get(lCount).xConcentration();
-                if (lYield < 0.9d) {
-                    lYieldOK = false;
-                    break;
-                }
+                lMassIn += lComponents.get(lCount).xConcentrationMass() * mFlowIn.xVolume();
+                lMassOut += pExitH.xConcentration()[lCount] * lComponents.get(lCount).xMolWeight() * pExitH.xVolume();
             }
-            if (lYieldOK) {
+            if (lMassOut / lMassIn > GlobalData.cMinYield) {
                 lConcTotalH = 0.0d;
                 lConcTotalL = 0.0d;
                 for (lCount = 0; lCount < pExitH.xConcentration().length; lCount++) {
@@ -539,6 +617,62 @@ public class MembraneCascade {
                 }
                 for (lCount = 3; lCount < pExitH.xConcentration().length; lCount++) {
                     lResult += pExitH.xConcentration()[lCount] / lConcTotalH;
+                }
+            }
+        }
+        return lResult;
+    }
+
+    double sObjectiveMix3(Flow pExitL, Flow pExitM, Flow pExitH) {
+        List<Component> lComponents;
+        int lCount;
+        double lMassIn;
+        double lMassOut;
+        double lConcTotalH;
+        double lConcTotalM;
+        double lConcTotalL;
+        double lResult;
+
+        lResult = 0.0d;
+        lComponents = GlobalData.gComponents;
+        lMassIn = 0;
+        lMassOut = 0;
+        for (lCount = 0; lCount < 2; lCount++) {
+            lMassIn += lComponents.get(lCount).xConcentrationMass() * mFlowIn.xVolume();
+            lMassOut += pExitL.xConcentration()[lCount] * lComponents.get(lCount).xMolWeight() * pExitL.xVolume();
+        }
+        if (lMassOut / lMassIn > GlobalData.cMinYield) {
+            lMassIn = 0;
+            lMassOut = 0;
+            for (lCount = 2; lCount < 4; lCount++) {
+                lMassIn += lComponents.get(lCount).xConcentrationMass() * mFlowIn.xVolume();
+                lMassOut += pExitM.xConcentration()[lCount] * lComponents.get(lCount).xMolWeight() * pExitM.xVolume();
+            }
+            if (lMassOut / lMassIn > GlobalData.cMinYield) {
+                lMassIn = 0;
+                lMassOut = 0;
+                for (lCount = 4; lCount < lComponents.size(); lCount++) {
+                    lMassIn += lComponents.get(lCount).xConcentrationMass() * mFlowIn.xVolume();
+                    lMassOut += pExitH.xConcentration()[lCount] * lComponents.get(lCount).xMolWeight() * pExitH.xVolume();
+                }
+                if (lMassOut / lMassIn > GlobalData.cMinYield) {
+                    lConcTotalH = 0.0d;
+                    lConcTotalM = 0.0d;
+                    lConcTotalL = 0.0d;
+                    for (lCount = 0; lCount < pExitH.xConcentration().length; lCount++) {
+                        lConcTotalH += pExitH.xConcentration()[lCount];
+                        lConcTotalM += pExitM.xConcentration()[lCount];
+                        lConcTotalL += pExitL.xConcentration()[lCount];
+                    }
+                    for (lCount = 0; lCount < 2; lCount++) {
+                        lResult += pExitL.xConcentration()[lCount] / lConcTotalL;
+                    }
+                    for (lCount = 2; lCount < 4; lCount++) {
+                        lResult += pExitM.xConcentration()[lCount] / lConcTotalM;
+                    }
+                    for (lCount = 4; lCount < pExitH.xConcentration().length; lCount++) {
+                        lResult += pExitH.xConcentration()[lCount] / lConcTotalH;
+                    }
                 }
             }
         }

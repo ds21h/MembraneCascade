@@ -25,4 +25,12 @@ class Component {
     double xConcentration(){
         return mConcentration / mMolWeight;
     }
+    
+    double xConcentrationMass(){
+        return mConcentration;
+    }
+    
+    double xMolWeight(){
+        return mMolWeight;
+    }
 }

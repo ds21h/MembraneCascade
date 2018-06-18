@@ -12,14 +12,17 @@ import java.util.List;
  * @author Afke
  */
 class GlobalData {
-//    static DataBase gDatabase;
     static List<Configuration> gConfigurations;
     static List<MembraneData> gMembranes;
     static List<Component> gComponents;
     static List<String> gMembTypes;
     static List<Integer> gPressures;
     static RunData gRunData;
-//    static OutFile gOutput;
+    static final int cObjectiveType = 3;
+    static final int ObjectiveYield = 1;
+    static final int ObjectivePurity = 2;
+    static final int ObjectiveMix = 3;
+    static final double cMinYield = 0.9d;
     
     private GlobalData(){
 //  Empty private constructor so no instances can be created        
