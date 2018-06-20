@@ -18,11 +18,11 @@ class GlobalData {
     static List<String> gMembTypes;
     static List<Integer> gPressures;
     static RunData gRunData;
-    static final int cObjectiveType = 3;
+    static final int cObjectiveType = 2;
     static final int ObjectiveYield = 1;
     static final int ObjectivePurity = 2;
     static final int ObjectiveMix = 3;
-    static final double cMinYield = 0.9d;
+    static final double cMinYield = 0.47d;
     
     private GlobalData(){
 //  Empty private constructor so no instances can be created        

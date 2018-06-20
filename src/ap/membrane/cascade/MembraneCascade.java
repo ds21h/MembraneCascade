@@ -40,7 +40,7 @@ public class MembraneCascade {
     private Membrane mStage1Max;
     private Membrane mStage2Max;
     private Membrane mStage3Max;
-    private Configuration mMaxConf;
+    private Configuration mMaxConf = null;
     private Flow mFlowIn;
     private Flow mFlowRecycleInit;
 
@@ -283,19 +283,23 @@ public class MembraneCascade {
     }
 
     private void sPrintSolution(Configuration pConf, Membrane pStage1, Membrane pStage2, Membrane pStage3) {
-        mRunReport.xWriteln("Conf: " + pConf.xConfId() + " S1: " + pStage1.xSurface() + " * " + pStage1.xType() + ", " + pStage1.xPressure() + " bar, " + "S2: " + pStage2.xSurface() + " * " + pStage2.xType() + ", " + pStage2.xPressure() + " bar, " + "S3: " + pStage3.xSurface() + " * " + pStage3.xType() + ", " + pStage3.xPressure() + " bar");
-        mRunReport.xWriteln("Stage 1:");
-        sPrintFlow("Input", pStage1.xInFlow());
-        sPrintFlow("Permeate", pStage1.xPermFlow());
-        sPrintFlow("Retentate", pStage1.xRetFlow());
-        mRunReport.xWriteln("Stage 2:");
-        sPrintFlow("Input", pStage2.xInFlow());
-        sPrintFlow("Permeate", pStage2.xPermFlow());
-        sPrintFlow("Retentate", pStage2.xRetFlow());
-        mRunReport.xWriteln("Stage 3:");
-        sPrintFlow("Input", pStage3.xInFlow());
-        sPrintFlow("Permeate", pStage3.xPermFlow());
-        sPrintFlow("Retentate", pStage3.xRetFlow());
+        if (pConf == null) {
+            mRunReport.xWriteln("No solution found!");
+        } else {
+            mRunReport.xWriteln("Conf: " + pConf.xConfId() + " S1: " + pStage1.xSurface() + " * " + pStage1.xType() + ", " + pStage1.xPressure() + " bar, " + "S2: " + pStage2.xSurface() + " * " + pStage2.xType() + ", " + pStage2.xPressure() + " bar, " + "S3: " + pStage3.xSurface() + " * " + pStage3.xType() + ", " + pStage3.xPressure() + " bar");
+            mRunReport.xWriteln("Stage 1:");
+            sPrintFlow("Input", pStage1.xInFlow());
+            sPrintFlow("Permeate", pStage1.xPermFlow());
+            sPrintFlow("Retentate", pStage1.xRetFlow());
+            mRunReport.xWriteln("Stage 2:");
+            sPrintFlow("Input", pStage2.xInFlow());
+            sPrintFlow("Permeate", pStage2.xPermFlow());
+            sPrintFlow("Retentate", pStage2.xRetFlow());
+            mRunReport.xWriteln("Stage 3:");
+            sPrintFlow("Input", pStage3.xInFlow());
+            sPrintFlow("Permeate", pStage3.xPermFlow());
+            sPrintFlow("Retentate", pStage3.xRetFlow());
+        }
     }
 
     private boolean sCalculateFlows(Configuration pConf) {
@@ -336,10 +340,13 @@ public class MembraneCascade {
                         lDeviation = sRecycleDeviation(lRecycle);
                         if (lDeviation > 10) {
                             lRecycleOK = false;
-                            if (lCountIteration > 2) {
+                            if (lCountIteration > 0) {
                                 if (!sVolumeClosed(pConf)) {
                                     lFeasible = false;
                                 }
+                            }
+                            if (lCountIteration > 15) {
+                                lFeasible = false;
                             }
                         } else {
                             lRecycleOK = true;
@@ -502,24 +509,24 @@ public class MembraneCascade {
 
     double sCalculateObjective(Flow pExitL, Flow pExitM, Flow pExitH) {
         double lResult;
-        
-        switch (GlobalData.cObjectiveType){
+
+        switch (GlobalData.cObjectiveType) {
             case GlobalData.ObjectiveYield:
-                if (pExitM.xVolume() == 0.0d){
+                if (pExitM.xVolume() == 0.0d) {
                     lResult = sObjectiveYield2(pExitL, pExitH);
                 } else {
                     lResult = sObjectiveYield3(pExitL, pExitM, pExitH);
                 }
                 break;
             case GlobalData.ObjectivePurity:
-                if (pExitM.xVolume() == 0.0d){
+                if (pExitM.xVolume() == 0.0d) {
                     lResult = sObjectivePurity2(pExitL, pExitH);
                 } else {
                     lResult = sObjectivePurity3(pExitL, pExitM, pExitH);
                 }
                 break;
             case GlobalData.ObjectiveMix:
-                if (pExitM.xVolume() == 0.0d){
+                if (pExitM.xVolume() == 0.0d) {
                     lResult = sObjectiveMix2(pExitL, pExitH);
                 } else {
                     lResult = sObjectiveMix3(pExitL, pExitM, pExitH);
@@ -530,27 +537,27 @@ public class MembraneCascade {
         }
         return lResult;
     }
-    
+
     double sObjectiveYield2(Flow pExitL, Flow pExitH) {
         double lResultL;
         double lResultH;
 
-        lResultL = ((pExitL.xVolume() * pExitL.xConcentration()[0])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[0])) + ((pExitL.xVolume() * pExitL.xConcentration()[1])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[1])) + ((pExitL.xVolume() * pExitL.xConcentration()[2])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[2]));
-        lResultH = ((pExitH.xVolume() * pExitH.xConcentration()[3])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[3])) + ((pExitH.xVolume() * pExitH.xConcentration()[4])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[4])) + ((pExitH.xVolume() * pExitH.xConcentration()[5])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[5]));
+        lResultL = ((pExitL.xVolume() * pExitL.xConcentration()[0]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[0])) + ((pExitL.xVolume() * pExitL.xConcentration()[1]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[1])) + ((pExitL.xVolume() * pExitL.xConcentration()[2]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[2]));
+        lResultH = ((pExitH.xVolume() * pExitH.xConcentration()[3]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[3])) + ((pExitH.xVolume() * pExitH.xConcentration()[4]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[4])) + ((pExitH.xVolume() * pExitH.xConcentration()[5]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[5]));
         return lResultL + lResultH;
     }
-    
+
     double sObjectiveYield3(Flow pExitL, Flow pExitM, Flow pExitH) {
         double lResultL;
         double lResultM;
         double lResultH;
 
-        lResultL = ((pExitL.xVolume() * pExitL.xConcentration()[0])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[0])) + ((pExitL.xVolume() * pExitL.xConcentration()[1])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[1]));
-        lResultM = ((pExitM.xVolume() * pExitM.xConcentration()[2])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[2])) + ((pExitM.xVolume() * pExitM.xConcentration()[3])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[3]));
-        lResultH = ((pExitH.xVolume() * pExitH.xConcentration()[4])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[4])) + ((pExitH.xVolume() * pExitH.xConcentration()[5])/(mFlowIn.xVolume() * mFlowIn.xConcentration()[5]));
+        lResultL = ((pExitL.xVolume() * pExitL.xConcentration()[0]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[0])) + ((pExitL.xVolume() * pExitL.xConcentration()[1]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[1]));
+        lResultM = ((pExitM.xVolume() * pExitM.xConcentration()[2]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[2])) + ((pExitM.xVolume() * pExitM.xConcentration()[3]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[3]));
+        lResultH = ((pExitH.xVolume() * pExitH.xConcentration()[4]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[4])) + ((pExitH.xVolume() * pExitH.xConcentration()[5]) / (mFlowIn.xVolume() * mFlowIn.xConcentration()[5]));
         return lResultL + lResultM + lResultH;
     }
-    
+
     double sObjectivePurity2(Flow pExitL, Flow pExitH) {
         double lResultL;
         double lResultH;
@@ -563,7 +570,7 @@ public class MembraneCascade {
         lResultH = (pExitH.xConcentration()[3] + pExitH.xConcentration()[4] + pExitH.xConcentration()[5]) / lTotalH;
         return lResultL + lResultH;
     }
-    
+
     double sObjectivePurity3(Flow pExitL, Flow pExitM, Flow pExitH) {
         double lResultL;
         double lResultM;

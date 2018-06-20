@@ -97,12 +97,16 @@ class Flow {
             }
         } else {
             lVerschil = abs(mVolume - pFlow.xVolume());
-            lResult = (int) ((lVerschil / mVolume) * 1000);
-            for (lTeller = 0; lTeller < mConcentration.length; lTeller++) {
-                lVerschil = abs(mConcentration[lTeller] - pFlow.xConcentration()[lTeller]);
-                lResultT = (int) ((lVerschil / mConcentration[lTeller]) * 1000);
-                if (lResultT > lResult) {
-                    lResult = lResultT;
+            if (lVerschil > 0.00001d) {
+                lResult = 999;
+            } else {
+                lResult = 0;
+                for (lTeller = 0; lTeller < mConcentration.length; lTeller++) {
+                    lVerschil = abs(mConcentration[lTeller] - pFlow.xConcentration()[lTeller]);
+                    lResultT = (int) ((lVerschil / mConcentration[lTeller]) * 1000);
+                    if (lResultT > lResult) {
+                        lResult = lResultT;
+                    }
                 }
             }
         }
